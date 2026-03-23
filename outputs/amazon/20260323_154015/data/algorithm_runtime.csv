@@ -1,0 +1,6 @@
+algorithm,iterations,runtime_seconds
+hits_hub,100,7.019880099978764
+hits_authority,100,7.0198864999983925
+pagerank,94,4.996125699981349
+personalized_pagerank,97,5.047500099986792
+degree_normalized_pagerank,100,5.4263539999956265
