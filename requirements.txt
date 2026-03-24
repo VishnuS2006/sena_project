@@ -1,6 +1,8 @@
+fastapi
+matplotlib
+networkx
 numpy
 pandas
+python-multipart
 scipy
-matplotlib
-seaborn
-streamlit
+uvicorn[standard]

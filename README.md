@@ -1,71 +1,106 @@
 # Fair Ranking in Power-Law Networks using Modified PageRank
 
-This project analyzes large graph datasets with sparse-matrix implementations of:
+This repository now contains a full-stack application with:
 
-- HITS (hub and authority scores)
+- `frontend/`: React + Vite SPA, Tailwind CSS, Axios, Recharts, `react-force-graph-2d`
+- `backend/`: FastAPI API, NetworkX ranking algorithms, Pandas tables, Matplotlib image export
+
+The app lets you upload a `.txt` edge list, compute:
+
+- HITS
 - Standard PageRank
-- Personalized PageRank with inverse-degree teleportation
-- Degree-Normalized PageRank with tunable `alpha`
+- Personalized PageRank with `teleport = 1 / (degree + 1)`
+- Degree-Normalized PageRank with `PR(v) / deg(v)^1.5`
 
-It measures fairness and concentration with:
+and inspect the results on one page through:
 
-- Gini coefficient
-- Spearman rank correlation
-- Tail visibility in top-K results
-- Normalized entropy
+- dataset upload status
+- original graph structure
+- three rank-colored graph views
+- power-law degree chart
+- top-50 comparison table
 
-It also estimates whether the network follows a power-law degree distribution and generates plots, CSV outputs, and a Markdown summary report.
+## Project Structure
 
-## Supported datasets
-
-Registered datasets are discovered from files in the repository root:
-
-- `amazon` -> `com-amazon.ungraph.txt`
-
-You can also pass a custom edge list with `--dataset-path`.
-
-## Run the full analysis
-
-```bash
-python main.py --dataset amazon
+```text
+e:\SENA
+|-- backend/
+|   |-- __init__.py
+|   |-- algorithms.py
+|   |-- main.py
+|   `-- utils.py
+|-- frontend/
+|   |-- index.html
+|   |-- vite.config.js
+|   `-- src/
+|       |-- components/
+|       |-- lib/
+|       |-- pages/
+|       |-- App.jsx
+|       |-- index.css
+|       `-- main.jsx
+|-- package.json
+|-- postcss.config.js
+|-- requirements.txt
+|-- tailwind.config.js
+`-- main.py
 ```
 
-Useful options:
+## Backend Setup
+
+Create a virtual environment, then install:
 
 ```bash
-python main.py --list-datasets
-python main.py --dataset bitcoin_alpha
-python main.py --dataset amazon --degree-alpha 2.0 --teleport-bias 1.2 --top-k 50 --tail-quantile 0.9
-python main.py --dataset custom --dataset-path path/to/graph.txt --directed
+pip install -r requirements.txt
 ```
 
-Outputs are written under `outputs/<dataset>/<timestamp>/`:
-
-- `data/node_scores.csv`
-- `data/fairness_metrics.csv`
-- `data/rank_correlations.csv`
-- `data/top_k_nodes.csv`
-- `data/power_law_summary.csv`
-- `plots/*.png`
-- `summary_report.md`
-
-## Launch the interactive dashboard
+Run the API:
 
 ```bash
-streamlit run dashboard.py
+uvicorn backend.main:app --reload
 ```
 
-The dashboard lets you:
+Available endpoints:
 
-- Select an available dataset
-- Choose the ranking algorithm
-- Adjust damping, teleport bias, and degree normalization
-- Inspect real-time fairness metrics, plots, and top-K nodes
+- `POST /upload`
+- `POST /api/upload`
+- `GET /health`
+- `GET /api/health`
 
-## Technical notes
+## Frontend Setup
 
-- Graph loading uses sparse adjacency matrices instead of NetworkX objects for memory efficiency.
-- Undirected graphs are symmetrized during ingestion.
-- Bitcoin Alpha is treated as a directed edge list by default; ranking uses topology only.
-- The power-law fit uses a discrete maximum-likelihood approximation with KS-based `xmin` selection.
-- The default tail-visibility metric treats nodes at or below the 90th degree percentile as the long tail.
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the SPA:
+
+```bash
+npm run dev
+```
+
+The Vite dev server proxies API requests to `http://127.0.0.1:8000`.
+
+## CLI Mode
+
+The same backend analysis can run directly from Python:
+
+```bash
+python main.py --input com-amazon.ungraph.txt
+```
+
+CLI output prints only:
+
+- summary stats
+- the top-50 comparison table
+
+No interactive matplotlib window is shown. Plot images are saved under `backend/generated/`.
+
+## Notes
+
+- Rankings are computed on the full uploaded graph.
+- Large datasets use a sampled subgraph only for browser visualization.
+- The comparison table rows are chosen by average rank across the four algorithms so differences remain visible across columns.
+- The legacy analysis artifacts under `fair_ranking/` and `outputs/` were left untouched, but they are not used by the new application.
