@@ -13,10 +13,10 @@ function formatRuntime(runtimeMap) {
 export default function SummaryCards({ analysis }) {
   if (!analysis) {
     return [
-      "Upload a dataset to populate network scale, fairness, and long-tail insights.",
-      "The scatter plot uses the same backend run as the table and fairness metrics.",
-      "Tail visibility measures how many low-degree nodes survive in each Top-50 list.",
-      "Gini cards quantify how concentrated each algorithm's score distribution becomes.",
+      "Upload a dataset to populate network scale, fairness, and long-tail ranking signals.",
+      "The scatter plot compares degree against score for all four algorithms in one view.",
+      "Tail visibility tracks how many low-degree nodes remain present inside each Top-50 list.",
+      "Gini cards quantify inequality so hub dominance and fairer score spread are easy to compare.",
     ].map((message, index) => (
       <div
         key={index}
@@ -57,7 +57,7 @@ export default function SummaryCards({ analysis }) {
       value: summary.scatterSampled
         ? `${formatCompactNumber(summary.scatterPointCount)} chart points`
         : "Full scatter coverage",
-      detail: formatRuntime(analysis.algorithmRuntimeSeconds),
+      detail: `${formatRuntime(analysis.algorithmRuntimeSeconds)} across four algorithms`,
       accent: "from-violet-100/80 via-white/70 to-violet-50",
     },
   ]

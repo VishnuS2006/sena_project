@@ -129,6 +129,8 @@ export default function ComparisonTable({ rows }) {
                     : row.rankShift < 0
                       ? "bg-rose-50/75 hover:bg-rose-50"
                       : "hover:bg-stone-50/80"
+                const rankDeltaLabel =
+                  row.rankShift > 0 ? "Improved" : row.rankShift < 0 ? "Dropped" : "Stable"
 
                 return (
                   <tr key={row.nodeId} className={`border-t border-stone-200/70 transition ${rowTone}`}>
@@ -149,16 +151,17 @@ export default function ComparisonTable({ rows }) {
                           <div className="flex flex-col gap-2">
                             <span className="font-medium text-ink">{row.nodeId}</span>
                             <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.22em]">
-                              {row.rankShift > 0 ? (
-                                <span className="rounded-full bg-emerald-100 px-2 py-1 text-emerald-700">
-                                  Improved
-                                </span>
-                              ) : null}
-                              {row.rankShift < 0 ? (
-                                <span className="rounded-full bg-rose-100 px-2 py-1 text-rose-700">
-                                  Dropped
-                                </span>
-                              ) : null}
+                              <span
+                                className={`rounded-full px-2 py-1 ${
+                                  row.rankShift > 0
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : row.rankShift < 0
+                                      ? "bg-rose-100 text-rose-700"
+                                      : "bg-stone-100 text-stone-600"
+                                }`}
+                              >
+                                {rankDeltaLabel}
+                              </span>
                             </div>
                           </div>
                         ) : (

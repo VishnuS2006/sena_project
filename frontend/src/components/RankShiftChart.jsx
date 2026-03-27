@@ -72,6 +72,12 @@ export default function RankShiftChart({ analysis }) {
                 tick={{ fill: "#57534e", fontSize: 12 }}
                 tickLine={false}
                 axisLine={{ stroke: "rgba(120,113,108,0.28)" }}
+                label={{
+                  value: "Node Count",
+                  angle: -90,
+                  position: "insideLeft",
+                  fill: "#44403c",
+                }}
               />
               <Tooltip content={<RankShiftTooltip />} cursor={{ fill: "rgba(68,64,60,0.05)" }} />
               <Bar dataKey="count" radius={[8, 8, 0, 0]}>

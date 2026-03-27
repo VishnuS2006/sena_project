@@ -131,7 +131,7 @@ export default function DashboardPage() {
           <SectionHeader
             eyebrow="Section 2"
             title="Degree vs Score Scatter Plot"
-            description="Node Degree on the x-axis and score on the y-axis reveal how each algorithm concentrates or redistributes visibility."
+            description="A four-algorithm scatter overlay showing whether importance remains concentrated in high-degree hubs or spreads more evenly across the network."
           />
           <DegreeScatterChart analysis={analysis} />
         </section>
@@ -141,7 +141,7 @@ export default function DashboardPage() {
             <SectionHeader
               eyebrow="Section 3"
               title="Rank Shift Analysis"
-              description="Histogram buckets show how standard PageRank positions change after Personalized PageRank reweights the restart behavior."
+              description="Rank shift is defined as rank(PageRank) minus rank(Personalized PageRank), making positive values the nodes that gain visibility after personalization."
             />
             <RankShiftChart analysis={analysis} />
           </div>
@@ -150,7 +150,7 @@ export default function DashboardPage() {
             <SectionHeader
               eyebrow="Section 4"
               title="Tail Visibility Comparison"
-              description="This compares how many low-degree nodes with degree less than or equal to five remain visible inside each Top-50 ranking."
+              description="Counts how many low-degree nodes with degree less than or equal to five survive inside each algorithm's Top-50 list."
             />
             <TailVisibilityChart analysis={analysis} />
           </div>

@@ -57,6 +57,12 @@ export default function TailVisibilityChart({ analysis }) {
                 tick={{ fill: "#57534e", fontSize: 12 }}
                 tickLine={false}
                 axisLine={{ stroke: "rgba(120,113,108,0.28)" }}
+                label={{
+                  value: "Low-Degree Nodes in Top-50",
+                  angle: -90,
+                  position: "insideLeft",
+                  fill: "#44403c",
+                }}
               />
               <Tooltip content={<TailVisibilityTooltip />} cursor={{ fill: "rgba(68,64,60,0.05)" }} />
               <Bar dataKey="value" radius={[8, 8, 0, 0]}>

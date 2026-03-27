@@ -119,6 +119,7 @@ def analyze_dataset(
         "top50Rows": top_table.to_dict(orient="records"),
         "nodeMetrics": node_metrics_frame[TABLE_COLUMNS].to_dict(orient="records"),
         "scatterRows": scatter_frame[SCATTER_COLUMNS].to_dict(orient="records"),
+        "rankShiftRows": rank_shift_rows,
         "metrics": {
             "gini": gini_values,
             "tailVisibility": tail_visibility,

@@ -2,7 +2,7 @@
 
 This repository now contains a full-stack application with:
 
-- `frontend/`: React + Vite SPA, Tailwind CSS, Axios, Recharts, `react-force-graph-2d`
+- `frontend/`: React + Vite SPA, Tailwind CSS, Axios, Recharts
 - `backend/`: FastAPI API, NetworkX ranking algorithms, Pandas tables, Matplotlib image export
 
 The app lets you upload a `.txt` edge list, compute:
@@ -15,9 +15,7 @@ The app lets you upload a `.txt` edge list, compute:
 and inspect the results on one page through:
 
 - dataset upload status
-- original graph structure
-- three rank-colored graph views
-- power-law degree chart
+- analytics dashboard with scatter, rank-shift, tail-visibility, fairness, and Top-50 comparison views
 - top-50 comparison table
 
 ## Project Structure
@@ -93,14 +91,14 @@ python main.py --input com-amazon.ungraph.txt
 
 CLI output prints only:
 
-- summary stats
 - the top-50 comparison table
+- fairness metrics
 
 No interactive matplotlib window is shown. Plot images are saved under `backend/generated/`.
 
 ## Notes
 
 - Rankings are computed on the full uploaded graph.
-- Large datasets use a sampled subgraph only for browser visualization.
+- Large datasets use sampling only to limit browser chart payload size while preserving the full algorithm run.
 - The comparison table rows are chosen by average rank across the four algorithms so differences remain visible across columns.
 - The legacy analysis artifacts under `fair_ranking/` and `outputs/` were left untouched, but they are not used by the new application.

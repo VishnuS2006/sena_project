@@ -87,6 +87,7 @@ export default function DegreeScatterChart({ analysis }) {
                   data={algorithm.data}
                   fill={algorithm.color}
                   fillOpacity={0.72}
+                  line={false}
                 />
               ))}
             </ScatterChart>

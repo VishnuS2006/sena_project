@@ -55,7 +55,7 @@ export default function GiniCards({ analysis }) {
                   color: accent.strong,
                 }}
               >
-                {winner === algorithm.key ? "Lowest" : "Gini"}
+                {winner === algorithm.key ? "Lowest Inequality" : "Gini Score"}
               </span>
             </div>
 
