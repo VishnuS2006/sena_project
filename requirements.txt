@@ -1,8 +1,0 @@
-fastapi
-matplotlib
-networkx
-numpy
-pandas
-python-multipart
-scipy
-uvicorn[standard]
