@@ -1,103 +1,119 @@
-import { useState } from 'react';
-import Card from '../components/Card.jsx';
+﻿import { useState } from 'react';
 import AlgorithmDetail from '../components/AlgorithmDetail.jsx';
 
 const algorithms = [
   {
     id: 'hits',
     label: 'HITS',
-    summary: 'Computes hub and authority scores in link-based networks.',
-    definition: 'HITS assigns authority scores to nodes pointed to by good hubs and hub scores to nodes pointing to good authorities.',
-    formula: 'a_i = \sum_{j \rightarrow i} h_j\n\nh_i = \sum_{i \rightarrow j} a_j',
-    steps: 'Iterate alternating updates for authority and hub vectors, then normalize each step to prevent divergence.',
-    notes: 'Strength: interpretable authority/hub roles. Weakness: amplifies core-periphery bias in power-law graphs.',
-    codeJS: `// calls computeHITS(edges)
-const { authority, hub } = computeHITS(edges);`,
-    codePy: `# networkx implementation
-import networkx as nx
-G = nx.DiGraph(edges)
-authority, hub = nx.hits(G, max_iter=50, normalized=True)`,
-    example: 'A node with many inbound edges from strong hubs becomes highly authoritative.',
+    summary: 'Authority and hub propagation on the marketplace graph.',
+    explanation: 'HITS alternates between two scores. Authorities receive support from strong hubs, and hubs receive support from strong authorities. In a marketplace network this makes dense product clusters reinforce one another quickly.',
+    formula: 'a(v)=\\sum_{u \\to v} h(u), \\qquad h(v)=\\sum_{v \\to w} a(w)',
+    steps: [
+      'Initialize every node with the same authority and hub score.',
+      'Update authority scores from incoming hub values.',
+      'Normalize, then update hub scores from outgoing authority values.',
+      'Repeat until the vectors stabilize.',
+    ],
+    code: `const { authority, hub } = computeHITS(edges);
+const rankedAuthorities = sortScores(authority, edges);`,
+    example: 'If a product is repeatedly linked by well-connected recommendation hubs, its authority score rises rapidly even when that popularity is inherited rather than intrinsic.',
   },
   {
     id: 'pagerank',
     label: 'PageRank',
-    summary: 'Computes stationary probabilities of a random walk on the graph.',
-    definition: 'PageRank scores nodes based on the probability that a random surfer lands on them.',
-    formula: 'PR(i) = (1 - d)/N + d \sum_{j \rightarrow i} PR(j)/out(j)',
-    steps: 'Start with uniform scores, propagate rank across incoming links, and apply damping until convergence.',
-    notes: 'Strength: robust for web-scale graphs. Weakness: highly connected nodes dominate scores in power-law networks.',
-    codeJS: `const scores = computePageRank(edges);`,
-    codePy: `pr = nx.pagerank(G, alpha=0.85)`,
-    example: 'A well-connected product accumulates high rank even if niche items are more diverse.',
+    summary: 'Random-walk ranking with damping.',
+    explanation: 'PageRank estimates how often a random surfer lands on each node. It is robust and elegant, but in a power-law graph the stationary probability mass tends to accumulate around already dense regions.',
+    formula: 'PR(v)=\\frac{1-d}{N}+d\\sum_{u \\to v} \\frac{PR(u)}{out(u)}',
+    steps: [
+      'Start from a uniform probability distribution.',
+      'Collect incoming rank contributions from parent nodes.',
+      'Redistribute dangling-node mass and apply damping.',
+      'Normalize and iterate until convergence.',
+    ],
+    code: `const scores = computePageRank(edges, 0.85, 100);
+const ranked = sortScores(scores, edges);`,
+    example: 'A blockbuster product with many incoming pathways captures more random-walk probability, leaving niche products with tiny scores.',
   },
   {
-    id: 'fairpagerank',
+    id: 'fair',
     label: 'Fair PageRank',
-    summary: 'Applies a degree-based penalty to stabilize score concentration.',
-    definition: 'Fair PageRank reduces advantage for high-degree nodes by penalizing scores according to node degree.',
-    formula: 'FairPR(i) = PR(i)/degree(i)^\alpha',
-    steps: 'Compute PageRank, then adjust each score by degree penalty and renormalize.',
-    notes: 'Strength: improves long-tail visibility. Weakness: may underweight extremely popular but relevant nodes.',
-    codeJS: `const fair = computeFairPageRank(edges, 0.85, 50, 0.7);`,
-    codePy: `raw = nx.pagerank(G, alpha=0.85)\nfor n in G: fair[n] = raw[n] / deg[n]**0.7`,
-    example: 'A moderate-degree node gains relative rank compared to the top hub nodes.',
+    summary: 'PageRank with a degree-aware fairness penalty.',
+    explanation: 'Fair PageRank begins with standard PageRank and then discounts nodes according to their graph degree. The purpose is not to flatten the graph completely, but to stop structural advantage from dominating the final ranking.',
+    formula: 'FairPR(v)=\\frac{PR(v)}{deg(v)^{\\alpha}}\\;\\Big/\\;\\sum_u \\frac{PR(u)}{deg(u)^{\\alpha}}',
+    steps: [
+      'Compute standard PageRank scores.',
+      'Measure each node degree in the graph.',
+      'Apply a degree-based penalty to concentrated nodes.',
+      'Renormalize to obtain a valid probability distribution.',
+    ],
+    code: `const fair = computeFairPageRank(edges, 0.85, 100, 0.7);
+const ranked = sortScores(fair, edges);`,
+    example: 'A medium-degree product can climb above an overexposed hub once the hub’s structural advantage is discounted.',
   },
   {
     id: 'personalized',
     label: 'Personalized PageRank',
-    summary: 'Biases the random walk toward a chosen seed set.',
-    definition: 'Personalized PageRank gives higher teleportation probability to selected nodes.',
-    formula: 'PPR(i) = (1-d) p_i + d \sum_{j \rightarrow i} PPR(j)/out(j)',
-    steps: 'Use a personalization vector, propagate scores, and converge to a distribution anchored by the seed set.',
-    notes: 'Strength: enables targeted long-tail exploration. Weakness: requires seed selection and tuning.',
-    codeJS: `const ppr = computePersonalizedPageRank(edges, { A: 0.4 });`,
-    codePy: `ppr = nx.pagerank(G, alpha=0.85, personalization=vector)`,
-    example: 'Nodes related to a chosen category receive a visible boost in ranking.',
+    summary: 'Random walk anchored by a teleportation prior.',
+    explanation: 'Personalized PageRank changes the teleportation vector. Instead of restarting uniformly, the walk can restart near preferred seed nodes or categories, which helps surface specific parts of the long tail.',
+    formula: 'PPR(v)=(1-d)p(v)+d\\sum_{u \\to v} \\frac{PPR(u)}{out(u)}',
+    steps: [
+      'Define a teleportation preference vector.',
+      'Propagate rank through incoming links as in PageRank.',
+      'Return dangling-node mass according to the preference vector.',
+      'Iterate until the distribution stabilizes.',
+    ],
+    code: `const ppr = computePersonalizedPageRank(edges, { A: 0.4, B: 0.3, C: 0.3 });
+const ranked = sortScores(ppr, edges);`,
+    example: 'A recommendation flow centered on niche categories can surface products that standard global ranking would otherwise ignore.',
   },
   {
     id: 'normalized',
     label: 'Normalized PageRank',
-    summary: 'Rescales scores to a uniform range to ease comparison.',
-    definition: 'Normalized PageRank maps raw scores into the [0,1] range after computation.',
-    formula: 'NormPR(i) = (PR(i) - min)/ (max - min)',
-    steps: 'Run PageRank, then normalize the score distribution to reduce variance across results.',
-    notes: 'Strength: supports direct comparison across graphs. Weakness: does not alter relative order.',
-    codeJS: `const normalized = computeNormalizedPageRank(edges);`,
-    codePy: `raw = nx.pagerank(G); normalized = (raw - min)/ (max - min)`,
-    example: 'A normalized score indicates relative importance on a common scale.',
+    summary: 'PageRank divided by degree and renormalized.',
+    explanation: 'Normalized PageRank is a simpler fairness baseline than Fair PageRank. It uses direct degree normalization to reduce hub bias and check how much of the observed dominance comes from raw connectivity alone.',
+    formula: 'NPR(v)=\\frac{PR(v)}{deg(v)}\\;\\Big/\\;\\sum_u \\frac{PR(u)}{deg(u)}',
+    steps: [
+      'Run PageRank on the directed graph.',
+      'Divide each score by the node degree.',
+      'Renormalize the values to sum to one.',
+      'Compare the new ordering against the original ranking.',
+    ],
+    code: `const normalized = computeNormalizedPageRank(edges);
+const ranked = sortScores(normalized, edges);`,
+    example: 'Low-degree products with strong relative importance become much more visible once the head-node advantage is normalized.',
   },
 ];
 
 function Algorithms() {
-  const [activeId, setActiveId] = useState(null);
-  const selected = algorithms.find((algo) => algo.id === activeId);
+  const [activeId, setActiveId] = useState('pagerank');
 
   return (
     <section className="space-y-10">
       <div className="rounded-[36px] border border-slate-200 bg-white p-10 shadow-soft">
         <h1 className="text-4xl font-semibold text-slate-950">Algorithms</h1>
-        <p className="mt-4 text-lg leading-8 text-slate-600">
-          Explore the ranking methods that reveal bias in power-law networks and the fairness-aware extensions that improve long-tail exposure.
+        <p className="mt-4 max-w-4xl text-lg leading-8 text-slate-600">
+          Each algorithm card expands into a readable mathematical and implementation view. The goal is to show both the ranking logic and the bias tradeoff clearly enough for engineering and analysis work.
         </p>
       </div>
-      <div className="grid gap-6 lg:grid-cols-3">
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {algorithms.map((algorithm) => (
           <button
             key={algorithm.id}
-            onClick={() => setActiveId(algorithm.id)}
-            className="rounded-3xl border border-slate-200 bg-white p-6 text-left shadow-soft transition hover:-translate-y-1"
+            onClick={() => setActiveId(activeId === algorithm.id ? '' : algorithm.id)}
+            className={`flex h-full min-h-[180px] flex-col rounded-[28px] border p-6 text-left shadow-soft transition hover:-translate-y-1 ${
+              activeId === algorithm.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-900'
+            }`}
           >
-            <h2 className="text-xl font-semibold text-slate-900">{algorithm.label}</h2>
-            <p className="mt-3 text-slate-600">{algorithm.summary}</p>
+            <h2 className="text-lg font-semibold">{algorithm.label}</h2>
+            <p className={`mt-3 grow text-sm leading-6 ${activeId === algorithm.id ? 'text-slate-200' : 'text-slate-600'}`}>{algorithm.summary}</p>
           </button>
         ))}
       </div>
-      {selected ? (
-        <AlgorithmDetail algorithm={selected} isOpen onClose={() => setActiveId(null)} />
-      ) : (
-        <div className="rounded-[32px] border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-600">Select an algorithm card to view mathematical definitions, code examples, and tradeoffs.</div>
-      )}
+
+      {algorithms.map((algorithm) => (
+        <AlgorithmDetail key={algorithm.id} algorithm={algorithm} isOpen={activeId === algorithm.id} onClose={() => setActiveId('')} />
+      ))}
     </section>
   );
 }

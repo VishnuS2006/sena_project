@@ -1,55 +1,58 @@
 function Methodology() {
   const steps = [
     {
-      title: 'Data ingestion',
-      text: 'Upload marketplace interactions as an edge list or load the built-in sample graph.',
+      title: '1. Data loading',
+      text: 'The workflow starts from an edge list representing marketplace interactions. The application accepts the bundled Amazon graph or an uploaded CSV/TXT file and standardizes it into source-target rows.',
     },
     {
-      title: 'Graph construction',
-      text: 'Translate the dataset into a directed graph with nodes and edges for ranking.',
+      title: '2. Graph creation',
+      text: 'Rows are converted into a directed graph where each node is a product and each edge captures co-purchase flow. Degree summaries, topology previews, and a force-directed view are generated immediately.',
     },
     {
-      title: 'Algorithm execution',
-      text: 'Run HITS, PageRank, and fairness-aware variants to compute scores.',
+      title: '3. Algorithm execution',
+      text: 'HITS, PageRank, Fair PageRank, Personalized PageRank, and Normalized PageRank are run over the same graph so the comparison remains structurally consistent.',
     },
     {
-      title: 'Result generation',
-      text: 'Visualize score distributions, top nodes, and long-tail visibility.',
+      title: '4. Ranking output',
+      text: 'The application produces ordered score tables, node-level charts, and score curves that reveal how much probability mass each method gives to the head versus the long tail.',
     },
     {
-      title: 'Evaluation',
-      text: 'Measure inequality, skewness, and ranking improvement across methods.',
+      title: '5. Evaluation',
+      text: 'Inequality metrics such as Gini coefficient, rank inequality, and degree-rank correlation quantify whether a method is amplifying or reducing structural bias.',
     },
   ];
+
+  const flow = ['Load data', 'Create graph', 'Run ranking', 'Generate outputs', 'Evaluate fairness'];
 
   return (
     <section className="space-y-10">
       <div className="rounded-[36px] border border-slate-200 bg-white p-10 shadow-soft">
         <h1 className="text-4xl font-semibold text-slate-950">Methodology</h1>
-        <p className="mt-4 text-lg leading-8 text-slate-600">
-          A structured pipeline ensures the comparison is reproducible and interpretable. Every step is designed to highlight how network shape influences ranking outcomes.
+        <p className="mt-4 max-w-4xl text-lg leading-8 text-slate-600">
+          The methodology is a clean pipeline from raw graph data to fairness evaluation. Each stage is visible so you can trace where structural inequality enters and how the algorithmic adjustments respond to it.
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        {steps.map((step, index) => (
-          <div key={step.title} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-soft">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand/10 text-brand font-semibold">{index + 1}</span>
-            <h2 className="mt-5 text-xl font-semibold text-slate-900">{step.title}</h2>
-            <p className="mt-3 text-slate-600">{step.text}</p>
-          </div>
-        ))}
+      <div className="rounded-[36px] border border-slate-200 bg-white p-10 shadow-soft">
+        <div className="grid gap-6 lg:grid-cols-5">
+          {steps.map((step) => (
+            <article key={step.title} className="rounded-[28px] bg-slate-50 p-6">
+              <h2 className="text-xl font-semibold text-slate-950">{step.title}</h2>
+              <p className="mt-4 leading-7 text-slate-600">{step.text}</p>
+            </article>
+          ))}
+        </div>
       </div>
 
       <div className="rounded-[36px] border border-slate-200 bg-white p-10 shadow-soft">
-        <h2 className="text-3xl font-semibold text-slate-950">Workflow overview</h2>
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8">
-            <p className="text-slate-600">Data ingestion and graph construction are performed on the backend with FastAPI, NetworkX, and Pandas. The frontend renders insights and interactive visualizations using React, Recharts, and Framer Motion.</p>
-          </div>
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8">
-            <p className="text-slate-600">Algorithm execution is split between Python for authoritative results and JavaScript modules for frontend demonstrations. Metrics are computed consistently across both environments.</p>
-          </div>
+        <h2 className="text-2xl font-semibold text-slate-950">Flow diagram</h2>
+        <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center">
+          {flow.map((label, index) => (
+            <div key={label} className="flex items-center gap-4">
+              <div className="rounded-3xl bg-slate-900 px-6 py-5 text-center text-sm font-semibold text-white">{label}</div>
+              {index < flow.length - 1 ? <div className="hidden text-3xl text-slate-300 lg:block">?</div> : null}
+            </div>
+          ))}
         </div>
       </div>
     </section>

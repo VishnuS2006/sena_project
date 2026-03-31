@@ -1,6 +1,6 @@
 function TableView({ data, columns }) {
   if (!data || !data.length) {
-    return <div className="rounded-3xl bg-white p-6 shadow-soft">No rows available.</div>;
+    return <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-slate-500">No rows available.</div>;
   }
 
   return (
@@ -9,18 +9,18 @@ function TableView({ data, columns }) {
         <thead className="bg-slate-50">
           <tr>
             {columns.map((column) => (
-              <th key={column.accessor} className="px-6 py-4 font-medium text-slate-600">
+              <th key={column.accessor} className="px-5 py-4 font-semibold text-slate-600">
                 {column.Header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200 bg-white">
+        <tbody className="divide-y divide-slate-100 bg-white">
           {data.map((row, rowIndex) => (
-            <tr key={rowIndex} className="hover:bg-slate-50">
+            <tr key={`${rowIndex}-${row[columns[0].accessor] ?? rowIndex}`} className="hover:bg-slate-50">
               {columns.map((column) => (
-                <td key={column.accessor} className="px-6 py-4 text-slate-700">
-                  {row[column.accessor]}
+                <td key={column.accessor} className="px-5 py-4 text-slate-700">
+                  {column.render ? column.render(row[column.accessor], row) : row[column.accessor]}
                 </td>
               ))}
             </tr>

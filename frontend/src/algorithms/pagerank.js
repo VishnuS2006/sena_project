@@ -1,25 +1,37 @@
-export function computePageRank(edges, damping = 0.85, iterations = 50) {
-  const nodes = Array.from(new Set(edges.flatMap(([u, v]) => [u, v])));
-  const outgoing = nodes.reduce((acc, node) => ({ ...acc, [node]: [] }), {});
-  const incoming = nodes.reduce((acc, node) => ({ ...acc, [node]: [] }), {});
-  edges.forEach(([source, target]) => {
-    outgoing[source].push(target);
-    incoming[target].push(source);
-  });
-  const n = nodes.length;
-  const scores = Object.fromEntries(nodes.map((node) => [node, 1 / n]));
+import { buildAdjacency, normalizeScores } from './utils.js';
 
-  for (let i = 0; i < iterations; i += 1) {
-    const nextScores = {};
-    nodes.forEach((node) => {
-      const incomingScore = incoming[node].reduce(
-        (sum, parent) => sum + scores[parent] / Math.max(outgoing[parent].length, 1),
-        0,
-      );
-      nextScores[node] = (1 - damping) / n + damping * incomingScore;
-    });
-    Object.assign(scores, nextScores);
+export function computePageRank(edges, damping = 0.85, maxIterations = 100, tolerance = 1e-8) {
+  const { nodes, incoming, outgoing } = buildAdjacency(edges);
+  const n = nodes.length;
+  if (!n) {
+    return {};
   }
 
-  return scores;
+  let scores = Object.fromEntries(nodes.map((node) => [node, 1 / n]));
+
+  for (let iteration = 0; iteration < maxIterations; iteration += 1) {
+    const danglingMass = nodes
+      .filter((node) => outgoing[node].length === 0)
+      .reduce((sum, node) => sum + scores[node], 0);
+
+    const nextScores = {};
+    let delta = 0;
+
+    nodes.forEach((node) => {
+      const incomingScore = incoming[node].reduce((sum, parent) => {
+        return sum + scores[parent] / Math.max(outgoing[parent].length, 1);
+      }, 0);
+
+      const next = (1 - damping) / n + damping * (incomingScore + danglingMass / n);
+      nextScores[node] = next;
+      delta += Math.abs(next - scores[node]);
+    });
+
+    scores = nextScores;
+    if (delta < tolerance) {
+      break;
+    }
+  }
+
+  return normalizeScores(scores);
 }

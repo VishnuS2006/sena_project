@@ -1,132 +1,191 @@
-import { useEffect, useMemo, useState } from 'react';
-import TableView from '../components/TableView.jsx';
+﻿import { useMemo, useState } from 'react';
 import { GraphChart } from '../components/GraphChart.jsx';
-import { computeHITS } from '../algorithms/hits.js';
-import { computePageRank } from '../algorithms/pagerank.js';
-import { computeFairPageRank } from '../algorithms/fairpagerank.js';
-import { computePersonalizedPageRank } from '../algorithms/personalized.js';
-import { computeNormalizedPageRank } from '../algorithms/normalized.js';
-import { fetchRankingResults } from '../services/api.js';
+import TableView from '../components/TableView.jsx';
+import { useDataset } from '../context/DatasetContext.jsx';
+import {
+  algorithmSeries,
+  buildComparisonRows,
+  buildNormalizedComparison,
+  formatScore,
+  normalizeMultiSeries,
+  normalizeRecords,
+  paginateRows,
+} from '../utils/scoreUtils.js';
 
-const sampleEdges = [
-  ['A', 'B'],
-  ['A', 'C'],
-  ['A', 'D'],
-  ['B', 'C'],
-  ['B', 'E'],
-  ['C', 'F'],
-  ['D', 'G'],
-  ['E', 'H'],
-  ['F', 'I'],
-  ['G', 'J'],
-  ['H', 'K'],
-  ['I', 'L'],
-  ['J', 'M'],
-  ['K', 'N'],
-  ['L', 'O'],
-  ['M', 'P'],
-  ['N', 'Q'],
-  ['O', 'R'],
-  ['P', 'S'],
-  ['Q', 'T'],
-];
+function algorithmViews(rankings) {
+  if (!rankings) {
+    return [];
+  }
 
-function sortScores(scores) {
-  return scores
-    .slice()
-    .sort((a, b) => b.value - a.value)
-    .map((item) => ({ name: item.name, value: Number(item.value.toFixed(4)) }));
+  return [
+    { key: 'HITS', label: 'HITS', scores: rankings.hits.authority },
+    { key: 'PageRank', label: 'PageRank', scores: rankings.pagerank.scores },
+    { key: 'Fair PageRank', label: 'Fair PageRank', scores: rankings.fair_pagerank.scores },
+    { key: 'Personalized PageRank', label: 'Personalized PageRank', scores: rankings.personalized_pagerank.scores },
+    { key: 'Normalized PageRank', label: 'Normalized PageRank', scores: rankings.degree_normalized_pagerank.scores },
+  ];
 }
 
 function Analysis() {
-  const [ranking, setRanking] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { dataset, loading, error } = useDataset();
+  const algorithms = algorithmViews(dataset?.rankings);
+  const [mode, setMode] = useState('normalized');
+  const [pages, setPages] = useState({});
+  const percentileCurves = dataset?.metrics?.percentile_curves ?? [];
+  const degreeBucketVisibility = dataset?.metrics?.degree_bucket_visibility ?? [];
 
-  useEffect(() => {
-    async function loadRankings() {
-      try {
-        const result = await fetchRankingResults();
-        setRanking(result);
-      } catch (err) {
-        setError('Unable to fetch ranking results from backend.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadRankings();
-  }, []);
+  const comparisonData = useMemo(() => {
+    const rows = buildComparisonRows(dataset?.rankings, 30);
+    return buildNormalizedComparison(rows, mode);
+  }, [dataset?.rankings, mode]);
 
-  const hits = useMemo(() => ranking?.hits?.authority ?? sortScores(computeHITS(sampleEdges).authority), [ranking]);
-  const pageRank = useMemo(() => ranking?.pagerank ?? sortScores(computePageRank(sampleEdges)), [ranking]);
-  const fairRank = useMemo(() => ranking?.fair ?? sortScores(computeFairPageRank(sampleEdges)), [ranking]);
-  const personalized = useMemo(() => ranking?.personalized ?? sortScores(computePersonalizedPageRank(sampleEdges, { A: 0.4, B: 0.3, C: 0.3 })), [ranking]);
-  const normalized = useMemo(() => ranking?.normalized ?? sortScores(computeNormalizedPageRank(sampleEdges)), [ranking]);
+  const degreeBucketChart = useMemo(
+    () => normalizeMultiSeries(degreeBucketVisibility, ['low_degree', 'mid_degree', 'head_degree'], 'normalized'),
+    [degreeBucketVisibility],
+  );
 
-  const dataSets = [
-    { label: 'HITS (Authority)', data: hits, sample: hits.slice(0, 5) },
-    { label: 'PageRank', data: pageRank, sample: pageRank.slice(0, 5) },
-    { label: 'Fair PageRank', data: fairRank, sample: fairRank.slice(0, 5) },
-    { label: 'Personalized PageRank', data: personalized, sample: personalized.slice(0, 5) },
-    { label: 'Normalized PageRank', data: normalized, sample: normalized.slice(0, 5) },
-  ];
-
-  const columns = [
+  const tableColumns = [
     { Header: 'Rank', accessor: 'rank' },
     { Header: 'Node', accessor: 'name' },
-    { Header: 'Score', accessor: 'value' },
+    { Header: 'Degree', accessor: 'degree' },
+    { Header: 'Raw score', accessor: 'value', render: (value) => formatScore(value) },
+    { Header: mode === 'raw' ? 'Display' : 'Normalized', accessor: 'displayValue', render: (value) => Number(value).toFixed(4) },
   ];
-
-  const formatTopRows = (data) => data.map((item, index) => ({ rank: index + 1, ...item }));
-
-  if (loading) {
-    return (
-      <section className="space-y-10">
-        <div className="rounded-[36px] border border-slate-200 bg-white p-10 shadow-soft">
-          <h1 className="text-4xl font-semibold text-slate-950">Analysis</h1>
-          <p className="mt-4 text-lg leading-8 text-slate-600">Loading live dataset ranking results from the backend.</p>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="space-y-10">
       <div className="rounded-[36px] border border-slate-200 bg-white p-10 shadow-soft">
         <h1 className="text-4xl font-semibold text-slate-950">Analysis</h1>
-        <p className="mt-4 text-lg leading-8 text-slate-600">
-          Detailed comparison of ranking scores, distributions, and top-ranked nodes for each algorithm on the provided marketplace dataset.
+        <p className="mt-4 max-w-4xl text-lg leading-8 text-slate-600">
+          This page now uses the widest available ranking output from the dataset cache instead of only top-10 slices. Every algorithm is normalized across its full visible output so low-degree uplift from Fair, Personalized, and Normalized PageRank is easier to inspect.
         </p>
-      </div>
-
-      {error && (
-        <div className="rounded-[32px] border border-red-200 bg-red-50 p-6 text-red-700">
-          {error}
+        <p className="mt-3 text-sm text-slate-500">{loading ? 'Loading dataset...' : error || 'Dynamic results are active.'}</p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          {[
+            { key: 'raw', label: 'Raw values' },
+            { key: 'normalized', label: 'Min-Max normalized' },
+            { key: 'log', label: 'Log normalized' },
+          ].map((option) => (
+            <button
+              key={option.key}
+              onClick={() => setMode(option.key)}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                mode === option.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
-      )}
-
-      <div className="grid gap-6">
-        {dataSets.map((item) => (
-          <div key={item.label} className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
-            <h2 className="text-2xl font-semibold text-slate-950">{item.label}</h2>
-            <p className="mt-3 text-slate-600">Score distribution and top-ranked nodes for this algorithm.</p>
-            <div className="mt-8 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-              <GraphChart data={item.data.slice(0, 20)} type="line" />
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">Top nodes</h3>
-                <div className="mt-4">
-                  <TableView data={formatTopRows(item.sample)} columns={columns} />
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
 
       <div className="rounded-[36px] border border-slate-200 bg-white p-8 shadow-soft">
-        <h2 className="text-2xl font-semibold text-slate-950">Cross-algorithm comparison</h2>
-        <p className="mt-4 text-slate-600">Fair and normalized ranking variants reduce dominance by high-degree nodes, improving long-tail exposure in power-law marketplace graphs.</p>
+        <h2 className="text-2xl font-semibold text-slate-950">All-algorithm normalized comparison</h2>
+        <p className="mt-3 text-slate-600">The grouped chart below compares up to 30 nodes drawn from the union of the strongest nodes across all algorithms, not only from HITS.</p>
+        <div className="mt-6">
+          <GraphChart
+            data={comparisonData}
+            type="bar"
+            title="Union of high-visibility nodes across all algorithms"
+            mode={mode}
+            yDomain={mode === 'raw' ? undefined : [0, 1]}
+            series={algorithmSeries()}
+            height={360}
+          />
+        </div>
       </div>
+
+      <div className="rounded-[36px] border border-slate-200 bg-white p-8 shadow-soft">
+        <h2 className="text-2xl font-semibold text-slate-950">Degree-bucket visibility</h2>
+        <p className="mt-3 text-slate-600">This chart shows how much average score reaches low-degree, mid-degree, and head nodes. Fairness-aware methods should increase low-degree visibility and reduce head concentration.</p>
+        <div className="mt-6">
+          <GraphChart
+            data={degreeBucketChart}
+            type="bar"
+            title="Average score by degree bucket"
+            series={[
+              { key: 'low_degree', label: 'Low degree', color: '#7c3aed' },
+              { key: 'mid_degree', label: 'Mid degree', color: '#16a34a' },
+              { key: 'head_degree', label: 'Head degree', color: '#f59e0b' },
+            ]}
+            mode="normalized"
+            yDomain={[0, 1]}
+          />
+        </div>
+      </div>
+
+      {algorithms.map((algorithm) => {
+        const page = pages[algorithm.key] ?? 1;
+        const normalizedScores = normalizeRecords(algorithm.scores, 'value', mode);
+        const currentPageRows = paginateRows(normalizedScores, page, 25);
+        const totalPages = Math.max(1, Math.ceil(normalizedScores.length / 25));
+        const curveRows = normalizeMultiSeries(
+          percentileCurves.filter((item) => item.algorithm === algorithm.key),
+          ['value'],
+          mode,
+        ).map((row) => ({ ...row, value: row.value }));
+
+        return (
+          <div key={algorithm.key} className="rounded-[36px] border border-slate-200 bg-white p-8 shadow-soft">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-950">{algorithm.label}</h2>
+                <p className="mt-2 text-slate-600">Showing a wider ranked output with descending sorting, normalized charting, and paginated rows for more nodes.</p>
+              </div>
+              <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
+                Showing page {page} of {totalPages} · {algorithm.scores.length} ranked nodes available in the cached view
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              <GraphChart
+                data={normalizedScores.slice(0, 40).map((item) => ({ ...item, value: item.displayValue }))}
+                type="bar"
+                title="Top ranked nodes"
+                mode={mode}
+                yDomain={mode === 'raw' ? undefined : [0, 1]}
+                height={340}
+              />
+              <GraphChart
+                data={curveRows.slice(0, 100)}
+                type="line"
+                title="Full output percentile curve"
+                xKey="percentile"
+                mode={mode}
+                yDomain={mode === 'raw' ? undefined : [0, 1]}
+                height={340}
+              />
+              <div className="rounded-3xl border border-slate-200 bg-white p-0 shadow-soft">
+                <TableView data={currentPageRows} columns={tableColumns} />
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-2">
+                {algorithm.scores.slice(0, 5).map((row) => (
+                  <div key={row.name} className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-700">
+                    {row.name} · degree {row.degree}
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPages((prev) => ({ ...prev, [algorithm.key]: Math.max(1, page - 1) }))}
+                  className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPages((prev) => ({ ...prev, [algorithm.key]: Math.min(totalPages, page + 1) }))}
+                  className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </section>
   );
 }

@@ -6,9 +6,8 @@ export default {
         soft: '0 18px 60px rgba(15, 23, 42, 0.08)',
       },
       colors: {
-        surface: '#fafbff',
-        brand: '#1158d4',
-        neutral: '#4b5563',
+        surface: '#f7f9fc',
+        brand: '#2563eb',
       },
     },
   },

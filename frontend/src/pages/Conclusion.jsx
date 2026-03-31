@@ -3,24 +3,15 @@ function Conclusion() {
     <section className="space-y-10">
       <div className="rounded-[36px] border border-slate-200 bg-white p-10 shadow-soft">
         <h1 className="text-4xl font-semibold text-slate-950">Conclusion</h1>
-        <p className="mt-4 text-lg leading-8 text-slate-600">
-          Fair ranking transforms marketplace networks by reducing the dominance of high-degree nodes and improving exposure for the long tail. In power-law graphs, this can improve diversity without sacrificing meaningful ranking structure.
+        <p className="mt-4 max-w-4xl text-lg leading-8 text-slate-600">
+          The application shows a consistent pattern across marketplace graphs: standard link-analysis methods reward structural advantage, while fairness-aware methods preserve ranking signal but reduce visibility inequality. That matters whenever discovery quality depends on more than raw popularity.
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
-          <h2 className="text-xl font-semibold text-slate-950">Summary</h2>
-          <p className="mt-4 text-slate-600">HITS and PageRank are biased in power-law networks. Fair PageRank and normalization offer robust alternatives for long-tail visibility.</p>
-        </div>
-        <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
-          <h2 className="text-xl font-semibold text-slate-950">Applications</h2>
-          <p className="mt-4 text-slate-600">This work applies to ecommerce, content recommendation, search ranking, and any network where popularity drives attention.</p>
-        </div>
-        <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
-          <h2 className="text-xl font-semibold text-slate-950">Future scope</h2>
-          <p className="mt-4 text-slate-600">Future extensions include group-aware fairness, dynamic graphs, and hybrid personalization for user-specific long-tail discovery.</p>
-        </div>
+        <div className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-soft"><h2 className="text-xl font-semibold text-slate-950">Summary of findings</h2><p className="mt-3 leading-7 text-slate-600">Power-law structure pushes HITS and PageRank toward the head of the graph. Fair PageRank and Normalized PageRank reduce that concentration and improve long-tail visibility.</p></div>
+        <div className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-soft"><h2 className="text-xl font-semibold text-slate-950">Why fairness matters</h2><p className="mt-3 leading-7 text-slate-600">A marketplace that only recycles existing popularity becomes less diverse, less discoverable, and less informative for users. Fair ranking broadens exposure without abandoning graph structure.</p></div>
+        <div className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-soft"><h2 className="text-xl font-semibold text-slate-950">Real-world applications</h2><p className="mt-3 leading-7 text-slate-600">The same reasoning applies to ecommerce, app stores, recommendation systems, content discovery, scholarly citation graphs, and any environment where visibility compounds over time.</p></div>
       </div>
     </section>
   );
