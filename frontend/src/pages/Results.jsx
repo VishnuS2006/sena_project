@@ -40,6 +40,7 @@ function Results() {
       normalizedRank: normalized.find((entry) => entry.name === item.name)?.rank ?? null,
       fairValue: item.value,
       pagerankValue: pagerank.find((entry) => entry.name === item.name)?.value ?? 0,
+      rankGain: (pagerank.find((entry) => entry.name === item.name)?.rank ?? item.rank) - item.rank,
     }));
 
   const rankColumns = [
@@ -57,6 +58,7 @@ function Results() {
     { Header: 'Degree', accessor: 'degree' },
     { Header: 'PageRank score', accessor: 'pagerankValue', render: (value) => formatScore(value) },
     { Header: 'Fair score', accessor: 'fairValue', render: (value) => formatScore(value) },
+    { Header: 'Rank gain vs PR', accessor: 'rankGain' },
   ];
 
   return (

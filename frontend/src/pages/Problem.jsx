@@ -1,48 +1,30 @@
 function Problem() {
   return (
-    <section className="space-y-10">
+    <section className="space-y-8">
       <div className="rounded-[36px] border border-slate-200 bg-white p-10 shadow-soft">
         <h1 className="text-4xl font-semibold text-slate-950">The ranking problem inside a power-law marketplace</h1>
         <p className="mt-4 max-w-4xl text-lg leading-8 text-slate-600">
-          Online marketplaces are not neutral graphs. A small number of products receive most clicks, reviews, and co-purchase links, while an enormous long tail receives very little structural attention. When ranking algorithms rely on this graph directly, they often confuse popularity with merit and amplify exposure inequality.
+          Marketplace graphs are highly unequal. A small head collects most links and attention, while most products stay in the long tail. If ranking algorithms trust that structure directly, they amplify popularity instead of balancing visibility.
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         <article className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
-          <h2 className="text-2xl font-semibold text-slate-950">1. Introduction to the problem</h2>
+          <h2 className="text-2xl font-semibold text-slate-950">Unequal Structure</h2>
           <p className="mt-4 leading-8 text-slate-600">
-            In a co-purchase network, each edge represents attention flowing between products. The topology is heavily imbalanced: a few products become dense hubs and many others remain sparsely connected. This means the ranking stage starts from an unequal structure, so a naive centrality score rarely gives smaller nodes a realistic chance to surface.
+            A few nodes form the dense core of the marketplace, while most nodes have very few links. The ranking process starts from this imbalance.
           </p>
         </article>
         <article className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
-          <h2 className="text-2xl font-semibold text-slate-950">2. Preferential attachment</h2>
+          <h2 className="text-2xl font-semibold text-slate-950">Rich-Get-Richer</h2>
           <p className="mt-4 leading-8 text-slate-600">
-            Preferential attachment describes the tendency of new links to connect to nodes that already have many links. In marketplaces, visibility breeds more visibility: well-known products are recommended more often, clicked more often, and therefore collect even more connections. The graph is shaped by cumulative advantage long before the ranking algorithm runs.
+            Preferential attachment means visible products keep gaining more links, more clicks, and more authority than smaller products.
           </p>
         </article>
         <article className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
-          <h2 className="text-2xl font-semibold text-slate-950">3. The rich-get-richer effect</h2>
+          <h2 className="text-2xl font-semibold text-slate-950">Why Fairness Matters</h2>
           <p className="mt-4 leading-8 text-slate-600">
-            Once a product reaches the head of the distribution, graph-based ranking reinforces its lead. Scores are recursively propagated through incoming and outgoing links, so high-degree products receive stronger support at every iteration. What begins as a slight popularity difference can become a dominant ranking gap.
-          </p>
-        </article>
-        <article className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
-          <h2 className="text-2xl font-semibold text-slate-950">4. Impact on long-tail nodes</h2>
-          <p className="mt-4 leading-8 text-slate-600">
-            Long-tail products may be relevant, diverse, or newly emerging, but they have too little graph mass to compete with established hubs. Their scores stay small, their recommendations stay rare, and the marketplace becomes narrower over time. This is a visibility problem as much as a ranking problem.
-          </p>
-        </article>
-        <article className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
-          <h2 className="text-2xl font-semibold text-slate-950">5. Why HITS fails here</h2>
-          <p className="mt-4 leading-8 text-slate-600">
-            HITS separates nodes into hubs and authorities, but in a power-law graph both roles are concentrated near the core. Strong hubs point to already prominent authorities, and those authorities in turn validate the same hub cluster. The iterative feedback loop is interpretable, but it also makes head-node dominance sharper.
-          </p>
-        </article>
-        <article className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
-          <h2 className="text-2xl font-semibold text-slate-950">6. Why PageRank is biased</h2>
-          <p className="mt-4 leading-8 text-slate-600">
-            PageRank models a random walk with teleportation, yet most probability mass still accumulates where the network is already dense. Nodes with many useful incoming paths absorb more stationary probability, while low-degree nodes receive little traffic. Teleportation softens the issue, but it does not remove structural bias when the graph itself is extremely unequal.
+            HITS and PageRank reinforce the core. Fairer variants are useful because they keep more visibility in low-degree and mid-degree nodes.
           </p>
         </article>
       </div>
@@ -52,7 +34,7 @@ function Problem() {
           <div>
             <h2 className="text-2xl font-semibold text-slate-950">Illustration of imbalance</h2>
             <p className="mt-3 max-w-3xl leading-7 text-slate-600">
-              The central cluster below represents head products with many reinforcing links. The outer ring represents long-tail products with few chances to gather authority, even when they remain connected to the marketplace.
+              Dense core nodes reinforce each other, while long-tail nodes stay peripheral and receive much less score.
             </p>
           </div>
           <div className="rounded-full bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700">Head nodes dominate the walk</div>

@@ -6,81 +6,173 @@ const algorithms = [
     id: 'hits',
     label: 'HITS',
     summary: 'Authority and hub propagation on the marketplace graph.',
-    explanation: 'HITS alternates between two scores. Authorities receive support from strong hubs, and hubs receive support from strong authorities. In a marketplace network this makes dense product clusters reinforce one another quickly.',
     formula: 'a(v)=\\sum_{u \\to v} h(u), \\qquad h(v)=\\sum_{v \\to w} a(w)',
+    formulaNote: 'HITS maintains two coupled signals. Authority follows strong incoming hubs, while hub score follows strong outgoing authorities.',
     steps: [
       'Initialize every node with the same authority and hub score.',
       'Update authority scores from incoming hub values.',
       'Normalize, then update hub scores from outgoing authority values.',
       'Repeat until the vectors stabilize.',
     ],
-    code: `const { authority, hub } = computeHITS(edges);
-const rankedAuthorities = sortScores(authority, edges);`,
-    example: 'If a product is repeatedly linked by well-connected recommendation hubs, its authority score rises rapidly even when that popularity is inherited rather than intrinsic.',
+    implementation: {
+      basic: `const { authority, hub } = computeHITS(edges, 100, 1e-8);
+
+for (let iteration = 0; iteration < maxIterations; iteration += 1) {
+  updateAuthorityFromIncomingHubs();
+  normalize(authority);
+  updateHubFromOutgoingAuthorities();
+  normalize(hub);
+}`,
+      optimized: `// Sparse adjacency lists let HITS stay linear in edges per iteration.
+const A = sparseAdjacencyMatrix(edges);
+let a = ones(n);
+let h = ones(n);
+
+for (let i = 0; i < maxIterations; i += 1) {
+  a = normalize(transpose(A).dot(h));
+  h = normalize(A.dot(a));
+}`,
+      explanation: [
+        { title: 'Step 1', body: 'Initialize authority and hub vectors with equal weight.' },
+        { title: 'Step 2', body: 'Propagate authority from incoming hubs and hub score from outgoing authorities.' },
+        { title: 'Step 3', body: 'Normalize after each update to keep the vectors comparable.' },
+        { title: 'Step 4', body: 'Stop when the updates converge or hit the iteration cap.' },
+      ],
+    },
   },
   {
     id: 'pagerank',
     label: 'PageRank',
     summary: 'Random-walk ranking with damping.',
-    explanation: 'PageRank estimates how often a random surfer lands on each node. It is robust and elegant, but in a power-law graph the stationary probability mass tends to accumulate around already dense regions.',
     formula: 'PR(v)=\\frac{1-d}{N}+d\\sum_{u \\to v} \\frac{PR(u)}{out(u)}',
+    formulaNote: 'PageRank models the stationary probability of a random surfer. Dense incoming paths concentrate mass quickly.',
     steps: [
       'Start from a uniform probability distribution.',
       'Collect incoming rank contributions from parent nodes.',
       'Redistribute dangling-node mass and apply damping.',
       'Normalize and iterate until convergence.',
     ],
-    code: `const scores = computePageRank(edges, 0.85, 100);
-const ranked = sortScores(scores, edges);`,
-    example: 'A blockbuster product with many incoming pathways captures more random-walk probability, leaving niche products with tiny scores.',
+    implementation: {
+      basic: `const scores = computePageRank(edges, 0.85, 100, 1e-8);
+
+for (let iteration = 0; iteration < maxIterations; iteration += 1) {
+  distributeIncomingRank();
+  redistributeDanglingMass();
+  applyDamping();
+}`,
+      optimized: `const P = columnNormalizedTransition(edges);
+let r = fill(1 / n, n);
+
+for (let i = 0; i < maxIterations; i += 1) {
+  r = ((1 - d) / n) + d * (P.dot(r) + danglingMass(r));
+  r = normalize(r);
+}`,
+      explanation: [
+        { title: 'Step 1', body: 'Initialize a uniform probability vector over all nodes.' },
+        { title: 'Step 2', body: 'Collect contributions from incoming neighbors through outgoing normalization.' },
+        { title: 'Step 3', body: 'Apply teleportation and dangling-node redistribution.' },
+        { title: 'Step 4', body: 'Repeat until the probability vector changes negligibly.' },
+      ],
+    },
   },
   {
     id: 'fair',
     label: 'Fair PageRank',
     summary: 'PageRank with a degree-aware fairness penalty.',
-    explanation: 'Fair PageRank begins with standard PageRank and then discounts nodes according to their graph degree. The purpose is not to flatten the graph completely, but to stop structural advantage from dominating the final ranking.',
     formula: 'FairPR(v)=\\frac{PR(v)}{deg(v)^{\\alpha}}\\;\\Big/\\;\\sum_u \\frac{PR(u)}{deg(u)^{\\alpha}}',
+    formulaNote: 'Fair PageRank starts from PageRank and discounts raw structural advantage by penalizing high-degree nodes.',
     steps: [
       'Compute standard PageRank scores.',
       'Measure each node degree in the graph.',
       'Apply a degree-based penalty to concentrated nodes.',
       'Renormalize to obtain a valid probability distribution.',
     ],
-    code: `const fair = computeFairPageRank(edges, 0.85, 100, 0.7);
-const ranked = sortScores(fair, edges);`,
-    example: 'A medium-degree product can climb above an overexposed hub once the hub’s structural advantage is discounted.',
+    implementation: {
+      basic: `const base = computePageRank(edges, 0.85, 100);
+const degree = degreeMap(edges);
+
+for (const [node, value] of Object.entries(base)) {
+  fair[node] = value / Math.pow(Math.max(degree[node], 1), alpha);
+}
+
+normalizeScores(fair);`,
+      optimized: `const pr = pagerankVector(edges);
+const degreePenalty = diagonal(degree.map((d) => 1 / Math.pow(Math.max(d, 1), alpha)));
+const fair = normalize(degreePenalty.dot(pr));`,
+      explanation: [
+        { title: 'Step 1', body: 'Run standard PageRank on the shared graph.' },
+        { title: 'Step 2', body: 'Estimate degree-driven structural advantage for each node.' },
+        { title: 'Step 3', body: 'Discount scores with a fairness penalty.' },
+        { title: 'Step 4', body: 'Renormalize so the adjusted scores remain comparable.' },
+      ],
+    },
   },
   {
     id: 'personalized',
     label: 'Personalized PageRank',
     summary: 'Random walk anchored by a teleportation prior.',
-    explanation: 'Personalized PageRank changes the teleportation vector. Instead of restarting uniformly, the walk can restart near preferred seed nodes or categories, which helps surface specific parts of the long tail.',
     formula: 'PPR(v)=(1-d)p(v)+d\\sum_{u \\to v} \\frac{PPR(u)}{out(u)}',
+    formulaNote: 'Personalized PageRank changes where the walk restarts, letting the ranking emphasize chosen seeds or categories.',
     steps: [
       'Define a teleportation preference vector.',
       'Propagate rank through incoming links as in PageRank.',
       'Return dangling-node mass according to the preference vector.',
       'Iterate until the distribution stabilizes.',
     ],
-    code: `const ppr = computePersonalizedPageRank(edges, { A: 0.4, B: 0.3, C: 0.3 });
-const ranked = sortScores(ppr, edges);`,
-    example: 'A recommendation flow centered on niche categories can surface products that standard global ranking would otherwise ignore.',
+    implementation: {
+      basic: `const seeds = { A: 0.45, C: 0.35, E: 0.20 };
+const ppr = computePersonalizedPageRank(edges, seeds, 0.85, 100);
+
+for (let iteration = 0; iteration < maxIterations; iteration += 1) {
+  injectTeleportationPrior(seeds);
+  propagateIncomingRank();
+}`,
+      optimized: `const P = columnNormalizedTransition(edges);
+const p = normalize(seedVector);
+let r = fill(1 / n, n);
+
+for (let i = 0; i < maxIterations; i += 1) {
+  r = (1 - d) * p + d * (P.dot(r) + danglingMassWeightedBy(p));
+}`,
+      explanation: [
+        { title: 'Step 1', body: 'Create a normalized teleportation prior over preferred nodes.' },
+        { title: 'Step 2', body: 'Run the same random-walk propagation as PageRank.' },
+        { title: 'Step 3', body: 'Send restart probability back through the prior instead of uniformly.' },
+        { title: 'Step 4', body: 'Iterate until the personalized score vector stabilizes.' },
+      ],
+    },
   },
   {
     id: 'normalized',
     label: 'Normalized PageRank',
     summary: 'PageRank divided by degree and renormalized.',
-    explanation: 'Normalized PageRank is a simpler fairness baseline than Fair PageRank. It uses direct degree normalization to reduce hub bias and check how much of the observed dominance comes from raw connectivity alone.',
     formula: 'NPR(v)=\\frac{PR(v)}{deg(v)}\\;\\Big/\\;\\sum_u \\frac{PR(u)}{deg(u)}',
+    formulaNote: 'Normalized PageRank removes some head-node dominance by directly dividing PageRank by degree before renormalization.',
     steps: [
       'Run PageRank on the directed graph.',
       'Divide each score by the node degree.',
       'Renormalize the values to sum to one.',
       'Compare the new ordering against the original ranking.',
     ],
-    code: `const normalized = computeNormalizedPageRank(edges);
-const ranked = sortScores(normalized, edges);`,
-    example: 'Low-degree products with strong relative importance become much more visible once the head-node advantage is normalized.',
+    implementation: {
+      basic: `const base = computePageRank(edges, 0.85, 100);
+const degree = degreeMap(edges);
+
+for (const [node, value] of Object.entries(base)) {
+  adjusted[node] = value / Math.max(degree[node], 1);
+}
+
+normalizeScores(adjusted);`,
+      optimized: `const pr = pagerankVector(edges);
+const invDegree = diagonal(degree.map((d) => 1 / Math.max(d, 1)));
+const normalized = normalize(invDegree.dot(pr));`,
+      explanation: [
+        { title: 'Step 1', body: 'Compute the base PageRank vector.' },
+        { title: 'Step 2', body: 'Apply direct degree normalization to each node.' },
+        { title: 'Step 3', body: 'Renormalize so the total still sums to one.' },
+        { title: 'Step 4', body: 'Compare the new score decay with standard PageRank.' },
+      ],
+    },
   },
 ];
 
@@ -92,7 +184,7 @@ function Algorithms() {
       <div className="rounded-[36px] border border-slate-200 bg-white p-10 shadow-soft">
         <h1 className="text-4xl font-semibold text-slate-950">Algorithms</h1>
         <p className="mt-4 max-w-4xl text-lg leading-8 text-slate-600">
-          Each algorithm card expands into a readable mathematical and implementation view. The goal is to show both the ranking logic and the bias tradeoff clearly enough for engineering and analysis work.
+          Each algorithm now uses the same graph, the same layout, and the same visual controls so fairness and rich-get-richer behavior can be learned by inspection instead of by reading long explanations.
         </p>
       </div>
 

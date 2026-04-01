@@ -8,6 +8,8 @@ import { paginateRows } from '../utils/scoreUtils.js';
 function Data() {
   const { dataset, error, loading, statusMessage, sourceLabel, uploadDataset, resetToDefault } = useDataset();
   const summary = dataset?.summary;
+  const metrics = dataset?.metrics;
+  const insights = metrics?.insights;
 
   const topNodeRows = useMemo(() => paginateRows(summary?.top_nodes ?? [], 1, 15), [summary]);
 
@@ -57,9 +59,31 @@ function Data() {
         <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-soft"><p className="text-sm text-slate-500">Density</p><p className="mt-2 text-3xl font-semibold text-slate-950">{summary ? summary.density.toFixed(4) : '...'}</p></div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
-        <ForceDirectedGraph graph={summary?.graph_sample} />
-        <GraphChart data={summary?.degree_distribution ?? []} type="bar" title="Degree distribution" />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-soft">
+          <h2 className="text-xl font-semibold text-slate-950">Parsing rule</h2>
+          <p className="mt-3 leading-7 text-slate-600">The parser accepts comma-separated or whitespace-separated source-target edges, ignores comment lines, and converts every valid pair into a directed connection.</p>
+        </div>
+        <div className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-soft">
+          <h2 className="text-xl font-semibold text-slate-950">Graph assumption</h2>
+          <p className="mt-3 leading-7 text-slate-600">Each node is treated as a marketplace item and every edge is treated as directional attention or co-purchase flow used by the ranking algorithms.</p>
+        </div>
+        <div className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-soft">
+          <h2 className="text-xl font-semibold text-slate-950">Current insight</h2>
+          <p className="mt-3 leading-7 text-slate-600">
+            Highest bias: <span className="font-semibold text-slate-900">{insights?.highest_bias ?? '...'}</span><br />
+            Lowest bias: <span className="font-semibold text-slate-900">{insights?.lowest_bias ?? '...'}</span>
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,1fr)]">
+        <div className="min-w-0">
+          <ForceDirectedGraph graph={summary?.graph_sample} />
+        </div>
+        <div className="min-w-0">
+          <GraphChart data={summary?.degree_distribution ?? []} type="bar" title="Degree distribution" />
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -70,7 +94,7 @@ function Data() {
         </div>
         <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
           <h2 className="text-2xl font-semibold text-slate-950">Amazon edge preview</h2>
-          <p className="mt-3 text-slate-600">The rows below come directly from <code className="rounded bg-slate-100 px-2 py-1 text-sm">com-amazon.ungraph.txt</code> and serve as the graph-construction input.</p>
+          <p className="mt-3 text-slate-600">The rows below are the exact graph-construction input for the active dataset. This makes the pipeline traceable from raw edge list to final fairness metrics.</p>
           <div className="mt-6"><TableView data={summary?.row_preview ?? []} columns={edgeColumns} /></div>
         </div>
       </div>

@@ -1,9 +1,9 @@
-const ALGORITHM_META = {
-  HITS: { key: 'hits', color: '#2563eb' },
-  'PageRank': { key: 'pagerank', color: '#16a34a' },
-  'Fair PageRank': { key: 'fair', color: '#f59e0b' },
-  'Personalized PageRank': { key: 'personalized', color: '#7c3aed' },
-  'Normalized PageRank': { key: 'normalized', color: '#0f766e' },
+export const ALGORITHM_META = {
+  HITS: { key: 'hits', color: '#2563eb', family: 'baseline' },
+  'PageRank': { key: 'pagerank', color: '#16a34a', family: 'baseline' },
+  'Fair PageRank': { key: 'fair', color: '#f59e0b', family: 'fair' },
+  'Personalized PageRank': { key: 'personalized', color: '#7c3aed', family: 'fair' },
+  'Normalized PageRank': { key: 'normalized', color: '#0f766e', family: 'fair' },
 };
 
 export function formatScore(value) {
@@ -151,4 +151,123 @@ export function metricSeries() {
     { key: 'rankInequality', label: 'Rank inequality', color: '#f59e0b' },
     { key: 'degreeRankCorrelation', label: 'Degree-rank correlation', color: '#16a34a' },
   ];
+}
+
+export function getAlgorithmViews(rankings) {
+  if (!rankings) {
+    return [];
+  }
+
+  return [
+    { label: 'HITS', scores: rankings.hits?.authority ?? [], ...ALGORITHM_META.HITS },
+    { label: 'PageRank', scores: rankings.pagerank?.scores ?? [], ...ALGORITHM_META['PageRank'] },
+    { label: 'Fair PageRank', scores: rankings.fair_pagerank?.scores ?? [], ...ALGORITHM_META['Fair PageRank'] },
+    { label: 'Personalized PageRank', scores: rankings.personalized_pagerank?.scores ?? [], ...ALGORITHM_META['Personalized PageRank'] },
+    { label: 'Normalized PageRank', scores: rankings.degree_normalized_pagerank?.scores ?? [], ...ALGORITHM_META['Normalized PageRank'] },
+  ];
+}
+
+function sampleRows(rows, limit = 220) {
+  if (rows.length <= limit) {
+    return rows;
+  }
+  const step = Math.ceil(rows.length / limit);
+  return rows.filter((_, index) => index % step === 0 || index === rows.length - 1);
+}
+
+export function normalizeValues(values, normalize = true) {
+  return normalize ? minMaxNormalize(values) : values;
+}
+
+export function buildNodeScoreSeries(scores, normalize = true, limit = 220) {
+  const ordered = [...scores].sort((a, b) => b.value - a.value);
+  const display = normalizeValues(ordered.map((item) => Number(item.value ?? 0)), normalize);
+  const rows = ordered.map((item, index) => ({
+    index: index + 1,
+    rank: item.rank ?? index + 1,
+    name: item.name,
+    degree: item.degree,
+    value: display[index] ?? 0,
+    rawValue: Number(item.value ?? 0),
+  }));
+  return sampleRows(rows, limit);
+}
+
+export function buildDegreeScoreSeries(scores, normalize = true, limit = 220) {
+  const grouped = scores.reduce((acc, item) => {
+    const degree = Number(item.degree ?? 0);
+    if (!acc.has(degree)) {
+      acc.set(degree, []);
+    }
+    acc.get(degree).push(Number(item.value ?? 0));
+    return acc;
+  }, new Map());
+
+  const ordered = [...grouped.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([degree, values]) => ({
+      degree,
+      rawValue: values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1),
+      nodeCount: values.length,
+    }));
+
+  const display = normalizeValues(ordered.map((item) => item.rawValue), normalize);
+  return sampleRows(
+    ordered.map((item, index) => ({
+      degree: item.degree,
+      value: display[index] ?? 0,
+      rawValue: item.rawValue,
+      nodeCount: item.nodeCount,
+    })),
+    limit,
+  );
+}
+
+export function buildRankScoreSeries(scores, normalize = true, limit = 220) {
+  const ordered = [...scores].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
+  const display = normalizeValues(ordered.map((item) => Number(item.value ?? 0)), normalize);
+  return sampleRows(
+    ordered.map((item, index) => ({
+      rank: item.rank ?? index + 1,
+      name: item.name,
+      degree: item.degree,
+      value: display[index] ?? 0,
+      rawValue: Number(item.value ?? 0),
+    })),
+    limit,
+  );
+}
+
+export function buildVisibilitySeries(scores, limit = 120) {
+  const ordered = [...scores].sort((a, b) => b.value - a.value);
+  const total = ordered.reduce((sum, item) => sum + Number(item.value ?? 0), 0) || 1;
+  let cumulative = 0;
+  return sampleRows(
+    ordered.map((item, index) => {
+      cumulative += Number(item.value ?? 0);
+      return {
+        percentile: Number((((index + 1) / ordered.length) * 100).toFixed(2)),
+        value: cumulative / total,
+        rawValue: Number(item.value ?? 0),
+        name: item.name,
+        degree: item.degree,
+      };
+    }),
+    limit,
+  );
+}
+
+export function buildCombinedSeries(algorithms, buildSeries) {
+  const maxLength = Math.max(0, ...algorithms.map((algorithm) => buildSeries(algorithm.scores, true, 500).length));
+  return Array.from({ length: maxLength }, (_, index) => {
+    const row = {};
+    algorithms.forEach((algorithm) => {
+      const series = buildSeries(algorithm.scores, true, 500);
+      const point = series[index];
+      row.index = point?.index ?? point?.rank ?? point?.degree ?? point?.percentile ?? index + 1;
+      row[algorithm.key] = point?.value ?? null;
+      row[`${algorithm.key}Raw`] = point?.rawValue ?? null;
+    });
+    return row;
+  }).filter((row) => row.index !== undefined);
 }

@@ -33,6 +33,7 @@ function Analysis() {
   const [pages, setPages] = useState({});
   const percentileCurves = dataset?.metrics?.percentile_curves ?? [];
   const degreeBucketVisibility = dataset?.metrics?.degree_bucket_visibility ?? [];
+  const insights = dataset?.metrics?.insights;
 
   const comparisonData = useMemo(() => {
     const rows = buildComparisonRows(dataset?.rankings, 30);
@@ -111,6 +112,22 @@ function Analysis() {
             mode="normalized"
             yDomain={[0, 1]}
           />
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
+          <h2 className="text-2xl font-semibold text-slate-950">Main analytical claim</h2>
+          <p className="mt-4 leading-8 text-slate-600">
+            If the degree-bucket chart shows more normalized score reaching the low-degree bucket while inequality metrics fall, then the method is improving long-tail visibility without abandoning graph structure.
+          </p>
+        </div>
+        <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-soft">
+          <h2 className="text-2xl font-semibold text-slate-950">Current bias signal</h2>
+          <p className="mt-4 leading-8 text-slate-600">
+            Highest observed bias: <span className="font-semibold text-slate-900">{insights?.highest_bias ?? '...'}</span><br />
+            Lowest observed bias: <span className="font-semibold text-slate-900">{insights?.lowest_bias ?? '...'}</span>
+          </p>
         </div>
       </div>
 

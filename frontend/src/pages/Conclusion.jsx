@@ -13,6 +13,13 @@ function Conclusion() {
         <div className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-soft"><h2 className="text-xl font-semibold text-slate-950">Why fairness matters</h2><p className="mt-3 leading-7 text-slate-600">A marketplace that only recycles existing popularity becomes less diverse, less discoverable, and less informative for users. Fair ranking broadens exposure without abandoning graph structure.</p></div>
         <div className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-soft"><h2 className="text-xl font-semibold text-slate-950">Real-world applications</h2><p className="mt-3 leading-7 text-slate-600">The same reasoning applies to ecommerce, app stores, recommendation systems, content discovery, scholarly citation graphs, and any environment where visibility compounds over time.</p></div>
       </div>
+
+      <div className="rounded-[36px] border border-slate-200 bg-slate-900 p-10 text-white shadow-soft">
+        <h2 className="text-3xl font-semibold">Final project statement</h2>
+        <p className="mt-4 max-w-4xl text-lg leading-8 text-slate-200">
+          This project is now structured as a complete working study: it loads marketplace graph data, implements baseline and fairness-aware ranking methods, visualizes their behavior across multiple pages, and supports the core problem statement with measurable long-tail fairness evidence.
+        </p>
+      </div>
     </section>
   );
 }

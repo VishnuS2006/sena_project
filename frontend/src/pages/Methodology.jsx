@@ -23,6 +23,13 @@ function Methodology() {
   ];
 
   const flow = ['Load data', 'Create graph', 'Run ranking', 'Generate outputs', 'Evaluate fairness'];
+  const deliverables = [
+    'Problem definition and motivation for long-tail fairness',
+    'Graph construction from a real marketplace-style edge list',
+    'Implementation of five ranking algorithms',
+    'Comparative charts, tables, and distribution views',
+    'Quantitative fairness metrics and final conclusion',
+  ];
 
   return (
     <section className="space-y-10">
@@ -50,7 +57,18 @@ function Methodology() {
           {flow.map((label, index) => (
             <div key={label} className="flex items-center gap-4">
               <div className="rounded-3xl bg-slate-900 px-6 py-5 text-center text-sm font-semibold text-white">{label}</div>
-              {index < flow.length - 1 ? <div className="hidden text-3xl text-slate-300 lg:block">?</div> : null}
+              {index < flow.length - 1 ? <div className="hidden text-3xl text-slate-300 lg:block">→</div> : null}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-[36px] border border-slate-200 bg-white p-10 shadow-soft">
+        <h2 className="text-2xl font-semibold text-slate-950">Project completion checklist</h2>
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {deliverables.map((item) => (
+            <div key={item} className="rounded-[26px] bg-emerald-50 p-5 text-sm font-medium leading-7 text-emerald-900">
+              {item}
             </div>
           ))}
         </div>

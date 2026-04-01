@@ -3,8 +3,14 @@ import Card from '../components/Card.jsx';
 import { useDataset } from '../context/DatasetContext.jsx';
 
 function Home() {
-  const { dataset, sourceLabel } = useDataset();
+  const { dataset, sourceLabel, statusMessage, error, loading } = useDataset();
   const summary = dataset?.summary;
+  const metrics = dataset?.metrics;
+  const highestBias = metrics?.insights?.highest_bias ?? 'HITS';
+  const lowestBias = metrics?.insights?.lowest_bias ?? 'Fair PageRank';
+  const comparison = metrics?.comparison ?? [];
+  const lowestGini = comparison.find((item) => item.name === lowestBias)?.gini;
+  const highestGini = comparison.find((item) => item.name === highestBias)?.gini;
 
   return (
     <section className="space-y-10">
@@ -35,6 +41,7 @@ function Home() {
               <div className="rounded-2xl bg-white p-5 shadow-soft sm:col-span-2">
                 <p className="text-sm text-slate-500">Source</p>
                 <p className="mt-2 text-base font-semibold text-slate-900">{sourceLabel}</p>
+                <p className="mt-2 text-sm text-slate-500">{loading ? 'Preparing analysis...' : error || statusMessage}</p>
               </div>
             </div>
           </div>
@@ -45,6 +52,44 @@ function Home() {
         <Card title="Problem" description="Understand how preferential attachment creates rich-get-richer exposure patterns in marketplace graphs." badge="Why it matters" />
         <Card title="Algorithms" description="Inspect HITS, PageRank, Fair PageRank, Personalized PageRank, and Normalized PageRank with readable formulas." badge="Methods" />
         <Card title="Metrics" description="Track Gini coefficient, rank inequality, and degree-rank correlation to quantify bias reduction." badge="Evidence" />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-[36px] border border-slate-200 bg-white p-8 shadow-soft">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">Project Outcome</p>
+              <h2 className="mt-3 text-3xl font-semibold text-slate-950">What this project demonstrates</h2>
+            </div>
+            <div className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">End-to-end analysis</div>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="rounded-3xl bg-slate-50 p-5">
+              <p className="text-sm text-slate-500">Most biased method</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">{highestBias}</p>
+              <p className="mt-2 text-sm text-slate-600">Gini: {highestGini ?? '...'}</p>
+            </div>
+            <div className="rounded-3xl bg-slate-50 p-5">
+              <p className="text-sm text-slate-500">Lowest bias method</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">{lowestBias}</p>
+              <p className="mt-2 text-sm text-slate-600">Gini: {lowestGini ?? '...'}</p>
+            </div>
+          </div>
+          <p className="mt-6 max-w-4xl leading-8 text-slate-600">
+            The application is organized to satisfy the full project statement: define the power-law ranking problem, build the graph from marketplace edges, compare standard and fairness-aware algorithms, and show measurable evidence that long-tail visibility improves when structural dominance is penalized.
+          </p>
+        </div>
+
+        <div className="rounded-[36px] border border-slate-200 bg-slate-900 p-8 text-white shadow-soft">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">Study Flow</p>
+          <ol className="mt-5 space-y-4 text-sm leading-7 text-slate-200">
+            <li>1. Load the Amazon graph or upload a custom edge list.</li>
+            <li>2. Construct the network and inspect degree concentration.</li>
+            <li>3. Run HITS, PageRank, and fairness-aware variants on the same graph.</li>
+            <li>4. Compare score distributions, rank movement, and long-tail uplift.</li>
+            <li>5. Use metrics to justify the final conclusion.</li>
+          </ol>
+        </div>
       </div>
     </section>
   );

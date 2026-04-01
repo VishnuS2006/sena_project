@@ -63,10 +63,16 @@ export function DatasetProvider({ children }) {
   const uploadDataset = async (file) => {
     const text = await file.text();
     const rows = parseDelimitedText(text);
+    if (rows.length < 2) {
+      setError('The uploaded file does not contain enough valid source-target rows to build a graph.');
+      setStatusMessage('Upload a CSV or TXT file with at least two edges.');
+      setLoading(false);
+      return;
+    }
     const computed = computeClientDataset(rows, file.name);
     setDataset(computed);
     setSourceLabel(`Uploaded file: ${file.name}`);
-    setStatusMessage('Using uploaded dataset in the browser.');
+    setStatusMessage(`Using uploaded dataset in the browser with ${rows.length} parsed edges.`);
     setError('');
     setLoading(false);
   };

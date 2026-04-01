@@ -170,6 +170,44 @@ export function computeClientDataset(rows, name = 'Uploaded Dataset') {
       .map((value, index) => ({ rank: index + 1, algorithm, value }));
   });
 
+  const percentileCurves = Object.entries(scoreMaps).flatMap(([algorithm, scoreMap]) => {
+    const ordered = Object.values(scoreMap).sort((a, b) => b - a);
+    if (!ordered.length) {
+      return [];
+    }
+    const lastIndex = ordered.length - 1;
+    return Array.from({ length: Math.min(100, ordered.length) }, (_, index) => {
+      const fraction = index / Math.max(Math.min(100, ordered.length) - 1, 1);
+      const sampleIndex = Math.round(fraction * lastIndex);
+      return {
+        percentile: index + 1,
+        algorithm,
+        value: ordered[sampleIndex],
+      };
+    });
+  });
+
+  const bucketAverage = (scoreMap, members) => {
+    if (!members.length) {
+      return 0;
+    }
+    return members.reduce((sum, node) => sum + (scoreMap[node] ?? 0), 0) / members.length;
+  };
+
+  const lowDegreeNodes = nodes.filter((node) => (degree[node] ?? 0) <= 2);
+  const midDegreeNodes = nodes.filter((node) => {
+    const value = degree[node] ?? 0;
+    return value >= 3 && value <= 9;
+  });
+  const headDegreeNodes = nodes.filter((node) => (degree[node] ?? 0) >= 10);
+
+  const degreeBucketVisibility = Object.entries(scoreMaps).map(([algorithm, scoreMap]) => ({
+    name: algorithm,
+    low_degree: bucketAverage(scoreMap, lowDegreeNodes),
+    mid_degree: bucketAverage(scoreMap, midDegreeNodes),
+    head_degree: bucketAverage(scoreMap, headDegreeNodes),
+  }));
+
   const highestBias = [...comparison].sort((a, b) => b.gini - a.gini)[0]?.name ?? 'HITS';
   const lowestBias = [...comparison].sort((a, b) => a.gini - b.gini)[0]?.name ?? 'Fair PageRank';
 
@@ -192,6 +230,8 @@ export function computeClientDataset(rows, name = 'Uploaded Dataset') {
     metrics: {
       comparison,
       skew_curves: skewCurves,
+      percentile_curves: percentileCurves,
+      degree_bucket_visibility: degreeBucketVisibility,
       insights: {
         highest_bias: highestBias,
         lowest_bias: lowestBias,

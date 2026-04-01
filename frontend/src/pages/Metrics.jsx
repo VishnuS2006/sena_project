@@ -55,6 +55,24 @@ function Metrics() {
         />
       </div>
 
+      <div className="rounded-[36px] border border-slate-200 bg-white p-8 shadow-soft">
+        <h2 className="text-2xl font-semibold text-slate-950">Metric reading guide</h2>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="rounded-[26px] bg-slate-50 p-5">
+            <p className="font-semibold text-slate-900">Gini coefficient</p>
+            <p className="mt-3 text-sm leading-7 text-slate-600">Lower is better when the goal is to avoid extreme concentration of ranking mass.</p>
+          </div>
+          <div className="rounded-[26px] bg-slate-50 p-5">
+            <p className="font-semibold text-slate-900">Rank inequality</p>
+            <p className="mt-3 text-sm leading-7 text-slate-600">Lower values mean the head is not swallowing nearly all of the score distribution.</p>
+          </div>
+          <div className="rounded-[26px] bg-slate-50 p-5">
+            <p className="font-semibold text-slate-900">Degree-rank correlation</p>
+            <p className="mt-3 text-sm leading-7 text-slate-600">Lower correlation means ranking is less directly determined by raw connectivity.</p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <GraphChart
           data={degreeBucketChart}
@@ -78,6 +96,7 @@ function Metrics() {
             { key: 'HITS', label: 'HITS', color: '#2563eb' },
             { key: 'PageRank', label: 'PageRank', color: '#16a34a' },
             { key: 'Fair PageRank', label: 'Fair PageRank', color: '#f59e0b' },
+            { key: 'Personalized PageRank', label: 'Personalized PageRank', color: '#e11d48' },
             { key: 'Normalized PageRank', label: 'Normalized PageRank', color: '#7c3aed' },
           ]}
           height={360}
